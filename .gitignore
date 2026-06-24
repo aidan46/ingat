@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# next.js build output
+.next/
+out/
+build/
+
+# env / secrets
+.env*
+!.env.example
+
+# local-only Claude layer (never commit)
+/.claude/settings.local.json
+/.claude/rules/*.local.md
+/.claude/hooks/guard-learning-zones.sh
+
+# local working state
+/journal/
+
+# misc
+.DS_Store
+*.log
