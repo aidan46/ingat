@@ -30,6 +30,7 @@ BUILD is conceptual-only graded by the LLM in v1 (architecture sketches). Execut
 3. **Don't store copyrighted source text long-term.** The rubric is the durable artifact; chapter text is transient, held only during extraction.
 4. **All LLM calls are server-side.** Keys live in env, never reach the client. (The artifact prototype called the API from the browser only because of the sandbox — that does not carry over.)
 5. **The rubric is sealed until earned.** Concepts, probes, and expected answers stay server-side, are never sent to the client before the matching answer is submitted, and have no viewer UI. The loop is state-machined so the rubric can't be reached early. Integrity is structural, not cryptographic.
+6. **Agents depend on a provider port, not a vendor SDK.** ingat is bring-your-own-key: any LLM (Claude, OpenAI/Codex, Gemini, Kimi, local Ollama). Agents call an `LLMProvider` port; provider SDKs and keys are confined to `lib/llm/`. Every agent response is schema-validated (zod) and retried, with structured output exposed as a capability that degrades gracefully (Anthropic forces JSON via tool-use, OpenAI has native structured outputs, local models often have none). "Any LLM" collapses to ~2 adapters: a native Anthropic adapter plus one OpenAI-compatible adapter (configurable `baseURL`) that covers OpenAI/Codex, Kimi, Ollama/llama.cpp, and Gemini's compat endpoint. **Local-first upside:** point an agent at a local model and there is no API spend and nothing leaves the machine — squarely ingat's ethos.
 
 ## v1 scope (what "done" means for the first build)
 
@@ -46,3 +47,6 @@ BUILD is conceptual-only graded by the LLM in v1 (architecture sketches). Execut
 - No auth / multi-user / cloud sync. Single local user.
 - No mobile. Local web UI only.
 - No rubric encryption — the adversary is self-discipline, not a remote attacker; the app must decrypt to grade, so the key is always local. Integrity comes from no-viewer + server-only + sealed-until-submitted, not crypto.
+- No native Gemini adapter — the OpenAI-compatible adapter covers Gemini's compat endpoint; a native one is deferred.
+- No paste-your-key settings UI — provider+model config is env/config-driven in v1.
+- No small-context chunking for local models — Claude's 200k context hides this; an 8k local model would need Extractor chunking. Deferred.
