@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand */
+  --color-cobalt: #2347c5;
+  --color-clay: #d9542b;
+
+  /* Neutral paper/ink base */
+  --color-paper: #faf9f6;
+  --color-ink: #1a1a1a;
+}
+
+/* Fonts come from next/font (app/layout.tsx); inline so the runtime vars resolve. */
+@theme inline {
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
