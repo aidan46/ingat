@@ -2,14 +2,14 @@
 
 ## Stack
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Framework | **Next.js (App Router), TypeScript** | One app, server + client. |
-| DB | **PostgreSQL** (local via Docker) | `docker compose up` a `postgres:16` container. |
-| ORM | **Prisma** | Migrations + typed client. |
-| Scheduling | **ts-fsrs** | FSRS algorithm. Deterministic, no LLM. |
-| LLM | **@anthropic-ai/sdk** | Server-side only. Model tiering per agent. |
-| UI | **Tailwind** + the prototype design tokens | Space Grotesk / Inter / IBM Plex Mono; cobalt `#2347C5` / clay `#D9542B`. |
+| Layer      | Choice                                     | Notes                                                                     |
+| ---------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| Framework  | **Next.js (App Router), TypeScript**       | One app, server + client.                                                 |
+| DB         | **PostgreSQL** (local via Docker)          | `docker compose up` a `postgres:16` container.                            |
+| ORM        | **Prisma**                                 | Migrations + typed client.                                                |
+| Scheduling | **ts-fsrs**                                | FSRS algorithm. Deterministic, no LLM.                                    |
+| LLM        | **@anthropic-ai/sdk**                      | Server-side only. Model tiering per agent.                                |
+| UI         | **Tailwind** + the prototype design tokens | Space Grotesk / Inter / IBM Plex Mono; cobalt `#2347C5` / clay `#D9542B`. |
 
 Single-user, local. No auth in v1.
 
@@ -83,9 +83,9 @@ ingat/
 
 Configured in `lib/anthropic.ts`, overridable per call:
 
-| Agent | Default | Rationale |
-|---|---|---|
-| Extractor | Sonnet (Opus optional for dense chapters) | One-time, cached — quality matters but cost is bounded. |
-| Recall Grader | Sonnet | High volume, cheap (rubric-only context). |
-| Review Tester | Sonnet | High volume, cheap. |
-| Architecture Reviewer (deferred) | Opus | No ground truth; needs the strongest judgement. |
+| Agent                            | Default                                   | Rationale                                               |
+| -------------------------------- | ----------------------------------------- | ------------------------------------------------------- |
+| Extractor                        | Sonnet (Opus optional for dense chapters) | One-time, cached — quality matters but cost is bounded. |
+| Recall Grader                    | Sonnet                                    | High volume, cheap (rubric-only context).               |
+| Review Tester                    | Sonnet                                    | High volume, cheap.                                     |
+| Architecture Reviewer (deferred) | Opus                                      | No ground truth; needs the strongest judgement.         |
