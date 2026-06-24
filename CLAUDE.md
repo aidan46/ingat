@@ -9,6 +9,7 @@ Conventions for Claude Code working in this repo. Read `docs/` before building: 
 3. **The grader never sees what it's grading against and the answer at once.** Extractor sees chapter, not answers. Graders see the rubric, not the chapter.
 4. **No long-term storage of copyrighted chapter text.** Bodies are transient; the rubric is the artifact. The schema has no chapter-body column — keep it that way.
 5. **Agents return only JSON.** Parse defensively (strip ```fences, slice first`{`…last `}`).
+6. **Rubric integrity.** The rubric (concepts, probes, expected answers) is never exposed before it's earned: it stays server-side, is never serialized into any client response prior to the matching answer being submitted, and has **no viewer UI**. The loop is state-machined so answers can't be reached early. This is enforced by structure and discipline, **not encryption** — the app holds the key, so encryption would add friction without security. Deliberate non-goal.
 
 ## Stack
 

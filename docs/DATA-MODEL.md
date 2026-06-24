@@ -112,5 +112,6 @@ enum FsrsState     { NEW LEARNING REVIEW RELEARNING }
 - **FSRS field names mirror `ts-fsrs`'s `Card`** (`stability`, `difficulty`, `elapsed_days`, `scheduled_days`, `reps`, `lapses`, `state`, `last_review`, `due`) so mapping to/from the library is mechanical. Map snake_case ↔ camelCase in `lib/scheduling/fsrs.ts`.
 - **`due` is nullable.** A concept isn't schedulable until its chapter's first recall grade initializes the card (`createEmptyCard()` then first review). Until then it shows as "not yet started" in the tracker.
 - **`Probe` is one-per-tier in v1** (`@@unique([conceptId, tier])`). If you later want a bank of questions per tier, drop the unique and add a `ProbeBank`/selection strategy.
+- **`expectedAnswer` is server-only.** It must never appear in a client-facing API response before the matching answer is submitted. The rubric's "sealed" state is derived from `RecallSession` existence, so no schema change is required (see ARCHITECTURE.md, "Rubric integrity & the sealed loop").
 - **No chapter body column** — enforces the copyright principle at the schema level. Re-ingest to re-extract.
 - The tracker's four loop cells map to: **Read** (chapter opened), **Recall** (a `RecallSession` exists), **Build** (a concept reached `BUILD` tier / manual), **Review** (concept `reps > 0` and not overdue). These are derived, not stored.
