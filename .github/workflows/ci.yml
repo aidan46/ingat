@@ -30,18 +30,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
-      - run: npx prisma generate
+      - run: pnpm exec prisma generate
 
-      - run: npm run format:check
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run depcruise
-      - run: npm run test
-      - run: npm run build
+      - run: pnpm run format:check
+      - run: pnpm run typecheck
+      - run: pnpm run lint
+      - run: pnpm run depcruise
+      - run: pnpm run test
+      - run: pnpm run build

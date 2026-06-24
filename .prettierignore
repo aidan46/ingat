@@ -4,6 +4,6 @@ build/
 coverage/
 node_modules/
 app/generated/
-package-lock.json
+pnpm-lock.yaml
 next-env.d.ts
 prisma/migrations/
