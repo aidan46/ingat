@@ -24,10 +24,11 @@ Next.js (App Router, TypeScript) · PostgreSQL + Prisma · ts-fsrs · @anthropic
 ## Getting started
 
 ```bash
-docker compose up -d        # start postgres:16
-cp .env.example .env        # then fill in DATABASE_URL + ANTHROPIC_API_KEY
-npx prisma migrate dev      # apply schema (empty until the data model lands)
-npm run dev                 # http://localhost:3000
+docker compose up -d         # start postgres:16
+cp .env.example .env         # then fill in DATABASE_URL + ANTHROPIC_API_KEY
+pnpm install                 # install deps (pnpm)
+pnpm exec prisma migrate dev # apply schema (empty until the data model lands)
+pnpm dev                     # http://localhost:3000
 ```
 
 ## Design tokens
@@ -40,9 +41,9 @@ Defined in `app/globals.css` (`@theme`) and wired in `app/layout.tsx`.
 ## Commands
 
 ```bash
-docker compose up -d        # start postgres
-npx prisma migrate dev      # apply schema
-npx prisma studio           # inspect data
-npm run dev                 # dev server
-npm run build               # production build
+docker compose up -d         # start postgres
+pnpm exec prisma migrate dev # apply schema
+pnpm exec prisma studio      # inspect data
+pnpm dev                     # dev server
+pnpm build                   # production build
 ```

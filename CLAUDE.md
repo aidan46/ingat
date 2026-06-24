@@ -29,7 +29,7 @@ Set defaults in `lib/anthropic.ts`; pass `model` per call, don't hardcode at cal
 
 ## Mechanical gates (run before declaring anything done)
 
-- `npm run check` (typecheck + lint + depcruise + test) must be green before any commit or PR. A milestone is not done on a red check — see BUILD-PLAN.md "Done when".
+- `pnpm check` (typecheck + lint + depcruise + test) must be green before any commit or PR. A milestone is not done on a red check — see BUILD-PLAN.md "Done when".
 - The three-domain boundary is enforced by `dependency-cruiser`, not good intentions. If a depcruise rule blocks you, the fix is to **respect the boundary** — never weaken or disable the rule.
 - `process.env.ANTHROPIC_API_KEY` is referenced only in `lib/anthropic.ts` (ESLint-enforced). Don't reach for it elsewhere.
 - Server-only modules (`lib/anthropic.ts`, `lib/agents/**`) must start with `import "server-only";` so a `'use client'` component importing them fails the build. This is the client→server boundary (the LLM stays server-side); enforced by the `server-only` package, not depcruise.
@@ -39,10 +39,11 @@ Set defaults in `lib/anthropic.ts`; pass `model` per call, don't hardcode at cal
 
 ```bash
 docker compose up -d        # start postgres
-npx prisma migrate dev      # apply schema
-npx prisma studio           # inspect data
-npm run dev                 # next dev server
-npm run check               # typecheck + lint + depcruise + test (gate)
+pnpm install                # install deps (pnpm; see packageManager field)
+pnpm exec prisma migrate dev # apply schema
+pnpm exec prisma studio     # inspect data
+pnpm dev                    # next dev server
+pnpm check                  # typecheck + lint + depcruise + test (gate)
 ```
 
 ## Conventions

@@ -30,8 +30,8 @@ Agents are fast, confident, and drift. Mechanical checks that fail loud are the 
   - pre-push: `tsc --noEmit` + `vitest run` + `depcruise` + `next build`.
 - **CI (GitHub Actions).** On PR/push, against a `postgres:16` service container: install (cached) → typecheck → lint → depcruise → `prisma validate` → test → build. Mark these **required status checks** under branch protection so the agent's PRs can't merge red.
 - **CD (intentionally thin).** No prod target for a local tool — "deploy" = build passes and `docker compose up` brings the stack up. Add a release workflow only if you ever package it.
-- **Glue.** `.editorconfig`, and a `npm run check` meta-script (`typecheck && lint && depcruise && test`) that the agent runs before declaring any milestone done.
-- **Done when:** a deliberately-planted violation — importing `ts-fsrs` inside `lib/agents/` — fails `npm run check` and CI; a non-conventional commit message is rejected; staged files are auto-formatted on commit.
+- **Glue.** `.editorconfig`, and a `pnpm check` meta-script (`typecheck && lint && depcruise && test`) that the agent runs before declaring any milestone done.
+- **Done when:** a deliberately-planted violation — importing `ts-fsrs` inside `lib/agents/` — fails `pnpm check` and CI; a non-conventional commit message is rejected; staged files are auto-formatted on commit.
 
 ## M2 — mdBook ingestion
 
