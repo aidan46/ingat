@@ -29,6 +29,7 @@ const eslintConfig = defineConfig([
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       // The Anthropic key is server-only and read in exactly one place.
+      // Cover dot access, bracket/string-literal access, and destructuring.
       "no-restricted-syntax": [
         "error",
         {
@@ -36,6 +37,18 @@ const eslintConfig = defineConfig([
             "MemberExpression[object.object.name='process'][object.property.name='env'][property.name='ANTHROPIC_API_KEY']",
           message:
             "process.env.ANTHROPIC_API_KEY may only be referenced in lib/anthropic.ts.",
+        },
+        {
+          selector:
+            "MemberExpression[object.object.name='process'][object.property.name='env'][property.value='ANTHROPIC_API_KEY']",
+          message:
+            "process.env['ANTHROPIC_API_KEY'] may only be referenced in lib/anthropic.ts.",
+        },
+        {
+          selector:
+            "VariableDeclarator[init.object.name='process'][init.property.name='env'] Property[key.name='ANTHROPIC_API_KEY']",
+          message:
+            "Destructuring ANTHROPIC_API_KEY from process.env is only allowed in lib/anthropic.ts.",
         },
       ],
     },

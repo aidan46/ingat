@@ -22,11 +22,14 @@ module.exports = {
     },
   ],
   options: {
-    doNotFollow: { path: "node_modules" },
     tsConfig: { fileName: "tsconfig.json" },
     tsPreCompilationDeps: true,
+    // doNotFollow keeps node_modules OUT of traversal but KEEPS the edges TO
+    // packages in the graph, so the @anthropic-ai/sdk / ts-fsrs boundary
+    // clauses can match. Excluding node_modules here would strip those edges.
+    doNotFollow: { path: "(^|/)node_modules/" },
     exclude: {
-      path: "(^|/)(\\.next|node_modules|coverage)/|^app/generated/",
+      path: "(^|/)(\\.next|coverage)/|^app/generated/",
     },
   },
 };
