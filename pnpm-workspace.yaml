@@ -1,0 +1,13 @@
+# Single-package repo. This file carries pnpm settings (pnpm 10+ reads them here).
+
+# Keep the default ~24h supply-chain release-age gate, but exempt the commitlint
+# toolchain, which we pinned right after its 21.1.0 release. Drop this once it ages out.
+minimumReleaseAgeExclude:
+  - "@commitlint/*"
+
+# Packages allowed to run install/build scripts (pnpm's equivalent of npm's allowScripts).
+allowBuilds:
+  "@prisma/engines": true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
