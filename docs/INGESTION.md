@@ -10,7 +10,7 @@ export interface ChapterRef {
   title: string;
   order: number;
   part?: string;
-  sourcePath: string;   // adapter-internal locator
+  sourcePath: string; // adapter-internal locator
 }
 
 export interface SourceAdapter {
@@ -28,9 +28,9 @@ Ingestion flow: `listChapters()` → upsert `Chapter` rows (no body) → for eac
 ```ts
 // lib/ingestion/mdbook-adapter.ts
 interface MdBookConfig {
-  repo: string;          // "rust-lang/async-book"
-  branch: string;        // "master"
-  srcPath?: string;      // "src"
+  repo: string; // "rust-lang/async-book"
+  branch: string; // "master"
+  srcPath?: string; // "src"
   partsAllow?: string[]; // e.g. ["Part 1: guide"] — only these top-level part headers
   resolveIncludes?: boolean; // default true
 }
@@ -62,15 +62,15 @@ const asyncBook: MdBookConfig = {
   repo: "rust-lang/async-book",
   branch: "master",
   srcPath: "src",
-  partsAllow: ["Part 1: guide"],   // skip the empty "Part 2: reference" and the deprecated "Old chapters"
+  partsAllow: ["Part 1: guide"], // skip the empty "Part 2: reference" and the deprecated "Old chapters"
   resolveIncludes: true,
 };
 ```
 
 This yields the 13 Part-1 chapters (Introduction, Concurrent programming, Async and await, More async/await topics, IO and blocking, Composing futures concurrently, Channels/locking/sync, Tools, Destruction and clean-up, Futures, Runtimes, Timers and signals, Async iterators/streams). Chapters run ~2–4k words — a good size for one Extractor call.
 
-> Optional: the three *written* Part-2 reference chapters (`cancellation`, `pinning`, `structured`) have real files and could be added later as a second pass; they're advanced, so leave them out of v1.
+> Optional: the three _written_ Part-2 reference chapters (`cancellation`, `pinning`, `structured`) have real files and could be added later as a second pass; they're advanced, so leave them out of v1.
 
 ## Why not EPUB/PDF first
 
-Your near-term reading list (Rust Book, Rustonomicon, Rust by Example, the Embedded book) is largely mdBooks, so this one adapter covers a lot. EPUB is the right *second* adapter (structured XHTML spine); PDF is last resort (column/figure/code extraction is genuinely painful). The `SourceAdapter` interface is the seam that lets you add them without disturbing extraction, scheduling, or UI.
+Your near-term reading list (Rust Book, Rustonomicon, Rust by Example, the Embedded book) is largely mdBooks, so this one adapter covers a lot. EPUB is the right _second_ adapter (structured XHTML spine); PDF is last resort (column/figure/code extraction is genuinely painful). The `SourceAdapter` interface is the seam that lets you add them without disturbing extraction, scheduling, or UI.

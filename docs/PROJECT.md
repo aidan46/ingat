@@ -1,16 +1,16 @@
 # ingat — project brief
 
-> Named **ingat** — Indonesian/Malay for *remember*. Sits alongside `ilmu` (the studio) and `arus` (the trading system) as one body of work, and keeps the project name clear of `recall`, which is reserved throughout the code for the same-day recall mechanic.
+> Named **ingat** — Indonesian/Malay for _remember_. Sits alongside `ilmu` (the studio) and `arus` (the trading system) as one body of work, and keeps the project name clear of `recall`, which is reserved throughout the code for the same-day recall mechanic.
 
 ## What it is
 
-A local-first tool for giving yourself a CS education from digital books. You read a chapter, write what you remember from memory, and an AI grades your retention against a concept key it extracted from the chapter *before* it saw your summary. Concepts you learn become individually scheduled spaced-repetition items that get re-tested days and weeks later at escalating difficulty.
+A local-first tool for giving yourself a CS education from digital books. You read a chapter, write what you remember from memory, and an AI grades your retention against a concept key it extracted from the chapter _before_ it saw your summary. Concepts you learn become individually scheduled spaced-repetition items that get re-tested days and weeks later at escalating difficulty.
 
 It is the union of two things we prototyped: the four-stage mastery tracker (Read → Recall → Build → Review) and the rubric-first retention grader.
 
 ## The one idea everything hangs off
 
-**The concept is the atom.** A chapter is just where concepts are born. Every concept carries its own probes (questions + expected answers at four difficulty tiers) and its own FSRS schedule. The reader, the same-day grader, the delayed tests, and the tracker UI are all just *views* over a pile of concepts.
+**The concept is the atom.** A chapter is just where concepts are born. Every concept carries its own probes (questions + expected answers at four difficulty tiers) and its own FSRS schedule. The reader, the same-day grader, the delayed tests, and the tracker UI are all just _views_ over a pile of concepts.
 
 ## The four-tier test ladder
 
