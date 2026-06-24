@@ -4,9 +4,11 @@ Three LLM agents. Each has a strict I/O contract and returns **only** JSON. Two 
 
 General rules:
 
-- Server-side only (`lib/agents/*`), key from env.
-- Use the SDK's structured output discipline: system prompt demands minified JSON, no markdown; parse defensively (strip fences, slice first `{` to last `}`).
-- Pass `model` in from the tiering config; don't hardcode.
+- Server-side only (`lib/agents/*`). Agents call the `LLMProvider` port (`lib/llm`), **never a vendor SDK**; provider keys live in `lib/llm/**`.
+- **Provider + model are passed in from config**, not hardcoded (generalizes the old "pass `model` in" rule). See ARCHITECTURE.md, "LLM provider abstraction".
+- **Every agent response is schema-validated (zod) and retried** on invalid JSON, via `lib/llm/validate.ts`. This validate/retry layer — not ad-hoc strip-fences / slice-first-`{`-to-last-`}` parsing — is the load-bearing mechanism for getting clean JSON out.
+- Structured output varies by provider: Anthropic forces JSON via tool-use, OpenAI has native structured outputs, local models are prompt-and-pray. The validate/retry layer absorbs the difference, so the agent code stays provider-agnostic.
+- **Model tiering is per-agent provider+model:** a strong model extracts (cached, one-time), a cheap or local model can grade (high volume). Caveat: grading quality _is_ the pedagogy — a weak grader undermines the retention loop — so use a capable model for extraction at minimum.
 
 ---
 

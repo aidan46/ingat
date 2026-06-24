@@ -2,14 +2,14 @@
 
 ## Stack
 
-| Layer      | Choice                                     | Notes                                                                     |
-| ---------- | ------------------------------------------ | ------------------------------------------------------------------------- |
-| Framework  | **Next.js (App Router), TypeScript**       | One app, server + client.                                                 |
-| DB         | **PostgreSQL** (local via Docker)          | `docker compose up` a `postgres:16` container.                            |
-| ORM        | **Prisma**                                 | Migrations + typed client.                                                |
-| Scheduling | **ts-fsrs**                                | FSRS algorithm. Deterministic, no LLM.                                    |
-| LLM        | **@anthropic-ai/sdk**                      | Server-side only. Model tiering per agent.                                |
-| UI         | **Tailwind** + the prototype design tokens | Space Grotesk / Inter / IBM Plex Mono; cobalt `#2347C5` / clay `#D9542B`. |
+| Layer      | Choice                                                                  | Notes                                                                     |
+| ---------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Framework  | **Next.js (App Router), TypeScript**                                    | One app, server + client.                                                 |
+| DB         | **PostgreSQL** (local via Docker)                                       | `docker compose up` a `postgres:16` container.                            |
+| ORM        | **Prisma**                                                              | Migrations + typed client.                                                |
+| Scheduling | **ts-fsrs**                                                             | FSRS algorithm. Deterministic, no LLM.                                    |
+| LLM        | **provider port (`lib/llm`) + adapters (anthropic, openai-compatible)** | Server-side only. Per-agent provider+model. SDKs and keys confined here.  |
+| UI         | **Tailwind** + the prototype design tokens                              | Space Grotesk / Inter / IBM Plex Mono; cobalt `#2347C5` / clay `#D9542B`. |
 
 Single-user, local. No auth in v1.
 
@@ -17,7 +17,7 @@ Single-user, local. No auth in v1.
 
 ```
                  ┌─────────────────────────────────────────────┐
-   chapter text  │  LLM domain (server-side, @anthropic-ai/sdk) │
+   chapter text  │  LLM domain (server-side, via `lib/llm` port)│
    ───────────▶  │   Extractor · Recall Grader · Review Tester  │
                  └───────────────┬─────────────────────────────┘
                                  │ structured JSON (concepts, grades, ratings)
@@ -35,11 +35,36 @@ Single-user, local. No auth in v1.
    ( Execution domain — compile+test grading — deferred to post-v1 )
 ```
 
-The LLM never computes a due date. The scheduler never asks a model anything. This boundary is the thing most likely to erode under "just let the agent handle it" — so it is enforced mechanically by `dependency-cruiser` rules in CI (see BUILD-PLAN.md, M1), not left to review.
+The LLM never computes a due date. The scheduler never asks a model anything. This boundary is the thing most likely to erode under "just let the agent handle it" — so it is enforced mechanically by `dependency-cruiser` rules in CI (see BUILD-PLAN.md, M1), not left to review. A further rule confines provider SDKs: only `lib/llm/**` may import a vendor SDK; `lib/agents/**` imports the `LLMProvider` port, never an SDK.
 
 ## Where LLM calls live
 
-All agent calls run in **Route Handlers** (`app/api/.../route.ts`) or **Server Actions**. The Anthropic key is read from `process.env.ANTHROPIC_API_KEY` and never serialized to the client. The client calls our own endpoints, which call Anthropic. This is the single most important deviation from the prototype.
+All agent calls run in **Route Handlers** (`app/api/.../route.ts`) or **Server Actions**, and go through the `lib/llm` provider port. Provider keys (e.g. `process.env.ANTHROPIC_API_KEY`, any OpenAI-compatible key) are read only inside `lib/llm/**` and never serialized to the client. The client calls our own endpoints, which call the provider. This is the single most important deviation from the prototype.
+
+## LLM provider abstraction
+
+ingat is bring-your-own-key: any LLM, not a single vendor. Agents depend on an `LLMProvider` **port**, never a vendor SDK. "Any LLM" collapses to ~2 adapters because the OpenAI Chat Completions format is the de facto standard — Codex/OpenAI, Kimi (Moonshot), and local runtimes (Ollama/llama.cpp) all speak it, and Gemini offers an OpenAI-compatible endpoint. So a native **Anthropic** adapter plus one **OpenAI-compatible** adapter (configurable `baseURL`) covers nearly the whole list; native Gemini is deferred.
+
+The hard part is structured output, not plumbing: Anthropic forces JSON via tool-use, OpenAI has native structured outputs, local models often have none. The real investment is therefore a **parse → validate (zod) → retry** layer (`lib/llm/validate.ts`), with structured output exposed as a capability that **degrades gracefully**.
+
+```ts
+interface LLMProvider {
+  name: string;
+  supportsStructuredOutput: boolean;
+  // messages in, schema-validated JSON out (retries on invalid output)
+  complete<T>(args: {
+    system?: string;
+    messages: Msg[];
+    schema: ZodSchema<T>;
+    model: string;
+    maxTokens?: number;
+  }): Promise<T>;
+}
+```
+
+- **Anthropic adapter** (`lib/llm/anthropic.ts`) uses tool-use to force JSON.
+- **OpenAI-compatible adapter** (`lib/llm/openai-compatible.ts`) takes a configurable `baseURL` (covers Codex/Kimi/Ollama/Gemini-compat) and uses native structured outputs when available, else prompt + validate + retry.
+- **Per-agent provider+model config** — a config map keyed by agent — generalizes model tiering: a strong model extracts (cached), a cheap or local model grades.
 
 ## Request flow — the same-day loop
 
@@ -82,7 +107,11 @@ ingat/
     agents/                   # extractor.ts, grader.ts, tester.ts (LLM domain)
     scheduling/               # fsrs.ts, escalation.ts (deterministic domain)
     ingestion/                # source-adapter.ts, mdbook-adapter.ts
-    anthropic.ts              # SDK client + model tiering config
+    llm/                      # provider port + adapters (LLM domain)
+      index.ts                #   the LLMProvider port + per-agent provider+model config
+      anthropic.ts            #   Anthropic adapter (tool-use for JSON)
+      openai-compatible.ts    #   OpenAI-compatible adapter (configurable baseURL)
+      validate.ts             #   parse / validate (zod) / retry
   prisma/
     schema.prisma
   docker-compose.yml          # postgres
@@ -91,11 +120,11 @@ ingat/
 
 ## Model tiering (per your convention)
 
-Configured in `lib/anthropic.ts`, overridable per call:
+Per-agent **provider + model**, configured in `lib/llm/` and overridable per call. The recommended config pairs a strong model on the cached, one-time Extraction with a cheap or local model on the constant Grading. Caveat to state plainly: **grading quality _is_ the pedagogy** — a weak grader undermines the retention loop — so use a capable model for extraction at minimum.
 
-| Agent                            | Default                                   | Rationale                                               |
-| -------------------------------- | ----------------------------------------- | ------------------------------------------------------- |
-| Extractor                        | Sonnet (Opus optional for dense chapters) | One-time, cached — quality matters but cost is bounded. |
-| Recall Grader                    | Sonnet                                    | High volume, cheap (rubric-only context).               |
-| Review Tester                    | Sonnet                                    | High volume, cheap.                                     |
-| Architecture Reviewer (deferred) | Opus                                      | No ground truth; needs the strongest judgement.         |
+| Agent                            | Default provider+model                             | Rationale                                               |
+| -------------------------------- | -------------------------------------------------- | ------------------------------------------------------- |
+| Extractor                        | Anthropic · Sonnet (Opus optional, dense chapters) | One-time, cached — quality matters but cost is bounded. |
+| Recall Grader                    | Sonnet (cheap or local provider acceptable)        | High volume, cheap (rubric-only context).               |
+| Review Tester                    | Sonnet (cheap or local provider acceptable)        | High volume, cheap.                                     |
+| Architecture Reviewer (deferred) | Anthropic · Opus                                   | No ground truth; needs the strongest judgement.         |

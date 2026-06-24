@@ -10,11 +10,14 @@ Conventions for Claude Code working in this repo. Read `docs/` before building: 
 4. **No long-term storage of copyrighted chapter text.** Bodies are transient; the rubric is the artifact. The schema has no chapter-body column — keep it that way.
 5. **Agents return only JSON.** Parse defensively (strip ```fences, slice first`{`…last `}`).
 6. **Rubric integrity.** The rubric (concepts, probes, expected answers) is never exposed before it's earned: it stays server-side, is never serialized into any client response prior to the matching answer being submitted, and has **no viewer UI**. The loop is state-machined so answers can't be reached early. This is enforced by structure and discipline, **not encryption** — the app holds the key, so encryption would add friction without security. Deliberate non-goal.
+7. **LLM provider abstraction.** Agents depend on the `LLMProvider` port, never a vendor SDK. Provider SDKs **and** keys are confined to `lib/llm/**`. Every agent response is schema-validated (zod) and retried; structured output is a capability that degrades gracefully across providers.
 
 ## Stack
 
-Next.js (App Router, TS) · PostgreSQL + Prisma · ts-fsrs · @anthropic-ai/sdk · Tailwind.
+Next.js (App Router, TS) · PostgreSQL + Prisma · ts-fsrs · provider port (`lib/llm/`) · Tailwind.
 Local single-user, no auth.
+
+LLM access via a provider port (`lib/llm/`) — Anthropic adapter first; an OpenAI-compatible adapter (configurable `baseURL`) covers OpenAI/Codex, Kimi, local Ollama, and Gemini's compat endpoint.
 
 ## Local workflow layer
 
@@ -22,18 +25,19 @@ Personal, machine-local workflow — the session ritual, build-time auth, and th
 
 ## Model tiering
 
-Set defaults in `lib/anthropic.ts`; pass `model` per call, don't hardcode at call sites.
+Per-agent **provider + model**, not a single global model. Set defaults in `lib/llm/`; pass provider+model per call from config, don't hardcode at call sites. A strong model extracts (cached, one-time); a cheap or local model can grade (high volume). Caveat: grading quality _is_ the pedagogy — a weak grader undermines the retention loop, so use a capable model for extraction at minimum.
 
 - Extractor: Sonnet (Opus allowed for dense chapters)
-- Recall Grader / Review Tester: Sonnet
+- Recall Grader / Review Tester: Sonnet (cheap or local provider acceptable)
 - Architecture Reviewer (deferred): Opus
 
 ## Mechanical gates (run before declaring anything done)
 
 - `pnpm check` (typecheck + lint + depcruise + test) must be green before any commit or PR. A milestone is not done on a red check — see BUILD-PLAN.md "Done when".
 - The three-domain boundary is enforced by `dependency-cruiser`, not good intentions. If a depcruise rule blocks you, the fix is to **respect the boundary** — never weaken or disable the rule.
-- `process.env.ANTHROPIC_API_KEY` is referenced only in `lib/anthropic.ts` (ESLint-enforced). Don't reach for it elsewhere.
-- Server-only modules (`lib/anthropic.ts`, `lib/agents/**`) must start with `import "server-only";` so a `'use client'` component importing them fails the build. This is the client→server boundary (the LLM stays server-side); enforced by the `server-only` package, not depcruise.
+- Provider keys (e.g. `process.env.ANTHROPIC_API_KEY`, any OpenAI-compatible key) are referenced only in `lib/llm/**` (ESLint-enforced). Don't reach for them elsewhere.
+- Provider SDKs stay in `lib/llm/**`: a `dependency-cruiser` rule allows only `lib/llm/**` to import a provider SDK; `lib/agents/**` depends on the `LLMProvider` port, never an SDK.
+- Server-only modules (`lib/llm/**`, `lib/agents/**`) must start with `import "server-only";` so a `'use client'` component importing them fails the build. This is the client→server boundary (the LLM stays server-side); enforced by the `server-only` package, not depcruise.
 - Conventional Commits are enforced by commitlint; Husky runs hooks on commit and push. Don't bypass with `--no-verify`.
 
 ## Commands
