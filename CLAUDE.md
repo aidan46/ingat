@@ -43,6 +43,7 @@ npm run check               # typecheck + lint + depcruise + test (gate)
 - Keep FSRS field names aligned with `ts-fsrs`'s `Card`; do snake/camel mapping in one place (`lib/scheduling/fsrs.ts`).
 - Work milestone by milestone (BUILD-PLAN.md). Each milestone ends runnable; don't pull later-milestone work forward.
 - Prefer Server Actions / Route Handlers for agent calls; stream the reader content rather than persisting it.
+- Keep `README.md` current as features land. When a milestone changes what the app does or how to run it, update the README in the same change — it's the front door for a fresh clone.
 
 ## Definition of done per milestone
 See BUILD-PLAN.md — each has an explicit "Done when". Don't mark a milestone complete until its check passes against a real run, not a mock.
