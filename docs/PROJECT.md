@@ -29,6 +29,7 @@ BUILD is conceptual-only graded by the LLM in v1 (architecture sketches). Execut
 2. **The grader never sets and marks the same test.** Rubric extraction happens without sight of the user's answer, always.
 3. **Don't store copyrighted source text long-term.** The rubric is the durable artifact; chapter text is transient, held only during extraction.
 4. **All LLM calls are server-side.** Keys live in env, never reach the client. (The artifact prototype called the API from the browser only because of the sandbox — that does not carry over.)
+5. **The rubric is sealed until earned.** Concepts, probes, and expected answers stay server-side, are never sent to the client before the matching answer is submitted, and have no viewer UI. The loop is state-machined so the rubric can't be reached early. Integrity is structural, not cryptographic.
 
 ## v1 scope (what "done" means for the first build)
 
@@ -44,3 +45,4 @@ BUILD is conceptual-only graded by the LLM in v1 (architecture sketches). Execut
 - No execution-backed code grading.
 - No auth / multi-user / cloud sync. Single local user.
 - No mobile. Local web UI only.
+- No rubric encryption — the adversary is self-discipline, not a remote attacker; the app must decrypt to grade, so the key is always local. Integrity comes from no-viewer + server-only + sealed-until-submitted, not crypto.

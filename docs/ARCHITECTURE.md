@@ -54,6 +54,16 @@ All agent calls run in **Route Handlers** (`app/api/.../route.ts`) or **Server A
 2. For each due concept, the **Review Tester** assembles a test from the concept's stored probes at its `currentTier` and grades the user's answer.
 3. Grade → rating (1–4) → **FSRS scheduler** updates the concept's card → new `due`. A `ReviewLog` row is written. The **tier escalator** may promote `currentTier`.
 
+## Rubric integrity & the sealed loop
+
+The threat model here is **self-discipline, not a remote attacker** — "cheating" is peeking at the answer key early. Encryption is rejected on purpose: the app must decrypt the rubric to grade, so the key is always local, and crypto would add friction without buying security. Integrity is structural instead, from three rules:
+
+- A chapter's rubric is **sealed** until the user submits a recall for that chapter. The sealed state is **derived** — no `RecallSession` for the chapter ⇒ sealed — so there is **no new column**.
+- The only data that crosses the wire to the client is **chapter text** (to read) and **grade results** (after submit). Concepts, probes, and expected answers **never** leave the server.
+- **Same-day loop:** the rubric is used only inside the server-side grade call. The client receives the result (score, captured/partial/missed _labels_, errors, gap questions) — never the probes or expected answers.
+- **Delayed review loop:** the test presents only the probe **question** at the current tier. The expected answer is used server-side to grade and is revealed to the client **only after the user submits their answer** (the documented, configurable default: reveal-after-answer), or withheld entirely (score + feedback only).
+- There is **no rubric-viewing UI** anywhere in the app.
+
 ## Suggested directory layout
 
 ```

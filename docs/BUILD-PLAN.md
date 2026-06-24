@@ -44,21 +44,22 @@ Agents are fast, confident, and drift. Mechanical checks that fail loud are the 
 
 - `lib/agents/extractor.ts` with the contract from AGENTS.md.
 - `POST /api/extract` (chapterId): load body via adapter → extract → persist `Concept` + `Probe` → set chapter `EXTRACTED` → discard body.
-- Minimal rubric viewer UI per chapter.
-- **Done when:** a chapter yields 6–10 concepts each with 4 tiered probes, persisted and viewable. Re-running is idempotent (don't duplicate concepts).
+- Verify the rubric persisted correctly via a test or DB inspection — **no rubric-viewing UI** (deliberate: prevents casual peeking; see ARCHITECTURE.md, "Rubric integrity & the sealed loop").
+- **Done when:** a chapter yields 6–10 concepts each with 4 tiered probes, persisted and verifiable via test/DB inspection (no UI). Re-running is idempotent (don't duplicate concepts).
 
 ## M4 — Reader + same-day Recall Grader (the core loop)
 
 - Reader view streams chapter markdown (transient fetch, not stored).
 - Recall textarea → `POST /api/recall` → `grader.ts` → persist `RecallSession`, init FSRS cards for the chapter's concepts.
 - Results UI: score, captured/partial/missed, errors, gap questions (reuse the prototype layout).
-- **Done when:** read → write recall → graded result renders, and concepts become schedulable (`due` set).
+- **Sealed rubric:** the rubric stays sealed until a recall is submitted; concepts, probes, and expected answers are never sent to the client pre-submit (see ARCHITECTURE.md, "Rubric integrity & the sealed loop").
+- **Done when:** read → write recall → graded result renders, and concepts become schedulable (`due` set); and no concept or expected answer is retrievable before submitting a recall — verify via browser network inspection that no rubric data crosses the wire.
 
 ## M5 — Scheduling + review queue
 
 - `lib/scheduling/fsrs.ts` (ts-fsrs wrapper; card ↔ Concept mapping).
 - `GET /api/review/due` (due concepts, interleaved across books, by priority).
-- Review UI: present the probe at `currentTier`; `POST /api/review/grade` → `tester.ts` → rating → FSRS update → `ReviewLog`.
+- Review UI: present the probe at `currentTier`; `POST /api/review/grade` → `tester.ts` → rating → FSRS update → `ReviewLog`. The review test sends only the probe **question**; the expected answer is used server-side and revealed to the client only after the answer is submitted (default), never before.
 - **Done when:** a concept graded today reappears on its scheduled future date with an updated interval; the queue spans books.
 
 ## M6 — Tier escalation + tracker

@@ -101,6 +101,14 @@ This is the expensive call. Generating all four tiers up front is deliberate: th
 
 ---
 
+## Client-facing output (rubric stays sealed)
+
+What may cross the wire to the client differs from what each agent produces server-side (see ARCHITECTURE.md, "Rubric integrity & the sealed loop"):
+
+- **Extractor** — its full output (the rubric: concepts, probes, expected answers) is **server-side only** and is never sent to the client.
+- **Recall Grader** — may return score / concept _labels_ / errors / gap questions (post-submit feedback), but **never** the probes or expected answers.
+- **Review Tester** — returns `correct` / `rating` / `feedback`; the `expectedAnswer` is revealed to the client only **after** the user's answer is submitted (default), never before.
+
 ## Deliberately NOT agents
 
 - **FSRS scheduler** (`lib/scheduling/fsrs.ts`) — takes a concept's card + a rating, returns the next card via `ts-fsrs`. Pure arithmetic. A model must never touch this.
