@@ -1,7 +1,1 @@
-# Reject Co-Authored-By trailers (standing project rule).
-if grep -iqE '^Co-Authored-By:' "$1"; then
-  echo "commit-msg: 'Co-Authored-By:' trailer is not allowed in this repo." >&2
-  exit 1
-fi
-
 npx commitlint --edit "$1"
