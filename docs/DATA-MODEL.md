@@ -34,7 +34,7 @@ model Chapter {
   concepts   Concept[]
   recalls    RecallSession[]
 
-  @@unique([bookId, order])
+  @@unique([bookId, sourcePath])
 }
 
 model Concept {

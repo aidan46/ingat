@@ -4,8 +4,9 @@ Read once, remember on schedule. A single-user, local spaced-repetition reader: 
 ingests book chapters, extracts concepts into a rubric, grades your recall, and schedules
 reviews with FSRS so what you read sticks.
 
-> Status: **M0 scaffold** — foundation only. The data model, agents, scheduling, and API
-> routes are not built yet. See `docs/BUILD-PLAN.md` for the milestone roadmap.
+> Status: **M2 ingestion** — the data model is migrated and an mdBook source adapter
+> plus `POST /api/ingest` land Books and Chapters (no bodies). Extractor, grader, and
+> scheduling are next. See `docs/BUILD-PLAN.md` for the milestone roadmap.
 
 ## Architecture in one breath
 
@@ -27,9 +28,24 @@ Next.js (App Router, TypeScript) · PostgreSQL + Prisma · ts-fsrs · @anthropic
 docker compose up -d         # start postgres:16
 cp .env.example .env         # then fill in DATABASE_URL + ANTHROPIC_API_KEY
 pnpm install                 # install deps (pnpm)
-pnpm exec prisma migrate dev # apply schema (empty until the data model lands)
+pnpm exec prisma migrate dev # apply schema (also regenerates the Prisma client)
 pnpm dev                     # http://localhost:3000
 ```
+
+## Ingest a book
+
+With the dev server running and the schema migrated, ingest an mdBook by POSTing its
+config. This example loads Part 1 of the async-book:
+
+```bash
+curl -sS -X POST localhost:3000/api/ingest -H 'Content-Type: application/json' \
+  -d '{"repo":"rust-lang/async-book","branch":"master","srcPath":"src","partsAllow":["Part 1: guide"],"resolveIncludes":true}'
+# -> {"bookId":"...","chapterCount":13}
+```
+
+This creates 1 Book + 13 Chapter rows. Chapter bodies are never stored; they are fetched
+transiently when needed. Re-running is idempotent: it upserts on the repo slug and each
+chapter's source path, so no duplicates.
 
 ## Design tokens
 
