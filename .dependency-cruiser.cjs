@@ -20,6 +20,14 @@ module.exports = {
       from: { path: "^lib/agents" },
       to: { path: "^(lib/scheduling|node_modules/ts-fsrs)" },
     },
+    {
+      name: "sdk-confined-to-llm",
+      comment:
+        "Only lib/llm/** may import a provider SDK; agents use the LLMProvider port.",
+      severity: "error",
+      from: { pathNot: "^lib/llm" },
+      to: { path: "node_modules/@anthropic-ai/sdk" },
+    },
   ],
   options: {
     tsConfig: { fileName: "tsconfig.json" },
