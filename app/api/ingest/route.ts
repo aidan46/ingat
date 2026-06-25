@@ -1,18 +1,10 @@
 import { prisma } from "@/lib/db";
 import {
   MdBookAdapter,
+  MdBookConfigSchema,
   rawGithubFetcher,
 } from "@/lib/ingestion/mdbook-adapter";
 import { slugify } from "@/lib/ingestion/slug";
-import { z } from "zod";
-
-const MdBookConfigSchema = z.object({
-  repo: z.string(),
-  branch: z.string(),
-  srcPath: z.string().optional(),
-  partsAllow: z.array(z.string()).optional(),
-  resolveIncludes: z.boolean().optional(),
-});
 
 // POST /api/ingest - body: MdBookConfig
 // Creates 1 Book + N Chapter rows (NO bodies). Idempotent on re-run.

@@ -36,19 +36,19 @@ const eslintConfig = defineConfig([
           selector:
             "MemberExpression[object.object.name='process'][object.property.name='env'][property.name='ANTHROPIC_API_KEY']",
           message:
-            "process.env.ANTHROPIC_API_KEY may only be referenced in lib/anthropic.ts.",
+            "process.env.ANTHROPIC_API_KEY may only be referenced in lib/llm/**.",
         },
         {
           selector:
             "MemberExpression[object.object.name='process'][object.property.name='env'][property.value='ANTHROPIC_API_KEY']",
           message:
-            "process.env['ANTHROPIC_API_KEY'] may only be referenced in lib/anthropic.ts.",
+            "process.env['ANTHROPIC_API_KEY'] may only be referenced in lib/llm/**.",
         },
         {
           selector:
             "VariableDeclarator[init.object.name='process'][init.property.name='env'] Property[key.name='ANTHROPIC_API_KEY']",
           message:
-            "Destructuring ANTHROPIC_API_KEY from process.env is only allowed in lib/anthropic.ts.",
+            "Destructuring ANTHROPIC_API_KEY from process.env is only allowed in lib/llm/**.",
         },
       ],
     },
@@ -56,7 +56,7 @@ const eslintConfig = defineConfig([
 
   // The one module allowed to read the Anthropic key.
   {
-    files: ["lib/anthropic.ts"],
+    files: ["lib/llm/**"],
     rules: { "no-restricted-syntax": "off" },
   },
 

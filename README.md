@@ -4,15 +4,16 @@ Read once, remember on schedule. A single-user, local spaced-repetition reader: 
 ingests book chapters, extracts concepts into a rubric, grades your recall, and schedules
 reviews with FSRS so what you read sticks.
 
-> Status: **M2 ingestion** — the data model is migrated and an mdBook source adapter
-> plus `POST /api/ingest` land Books and Chapters (no bodies). Extractor, grader, and
-> scheduling are next. See `docs/BUILD-PLAN.md` for the milestone roadmap.
+> Status: **M3 extractor** — on top of ingestion, `POST /api/extract` runs the Extractor
+> agent over a chapter through the `lib/llm` provider port and persists its rubric
+> (Concepts + tiered Probes). Grader and scheduling are next. See `docs/BUILD-PLAN.md`
+> for the milestone roadmap.
 
 ## Architecture in one breath
 
 Three domains stay separate (enforced mechanically in later milestones):
 
-- **LLM domain** (`lib/agents/**`, server-side only) judges language — extract, grade recall, test reviews.
+- **LLM domain** (`lib/agents/**`, server-side only) judges language — extract, grade recall, test reviews. Agents call the `LLMProvider` port (`lib/llm/**`); provider SDKs and keys are confined there.
 - **Deterministic domain** (`lib/scheduling/**`) does FSRS + tier math. No model calls.
 - **Persistence** is PostgreSQL via Prisma. Chapter bodies are transient; the rubric is the artifact.
 
@@ -46,6 +47,27 @@ curl -sS -X POST localhost:3000/api/ingest -H 'Content-Type: application/json' \
 This creates 1 Book + 13 Chapter rows. Chapter bodies are never stored; they are fetched
 transiently when needed. Re-running is idempotent: it upserts on the repo slug and each
 chapter's source path, so no duplicates.
+
+## Extract a chapter's rubric
+
+Extraction runs the Extractor agent over one chapter and persists its rubric: 6-10
+Concepts, each with four tiered Probes (RECALL / EXPLAIN / APPLY / BUILD) and an expected
+answer. This makes a **real LLM call** (Anthropic, server-side via the `lib/llm` port), so
+`ANTHROPIC_API_KEY` in `.env` must be a funded Console key — a `credit balance too low`
+error means the key's Console account needs credits (this is separate from any Claude
+subscription). Pass a `chapterId` from the ingest step:
+
+```bash
+curl -sS -X POST localhost:3000/api/extract -H 'Content-Type: application/json' \
+  -d '{"chapterId":"<chapterId>"}'
+# -> {"chapterId":"...","conceptCount":10}
+```
+
+The chapter flips to `EXTRACTED` and the rubric lands as `Concept` + `Probe` rows. The
+rubric is **sealed**: it is never returned to the client (the response is counts only) and
+there is no rubric-viewing UI — inspect it via `prisma studio` or SQL. Re-running is a
+no-op once a chapter is `EXTRACTED`; pass `{"force":true}` to re-extract, which replaces
+the chapter's concepts (no duplicates) rather than adding to them.
 
 ## Design tokens
 
