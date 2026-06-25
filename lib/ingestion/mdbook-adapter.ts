@@ -1,13 +1,16 @@
 import path from "node:path";
+import { z } from "zod";
 import type { ChapterRef, SourceAdapter } from "./source-adapter";
 
-export interface MdBookConfig {
-  repo: string; // "rust-lang/async-book"
-  branch: string; // "master"
-  srcPath?: string; // "src"
-  partsAllow?: string[]; // only these top-level part headers
-  resolveIncludes?: boolean; // default true
-}
+// Schema validates incoming/stored config; type derives from it (one source).
+export const MdBookConfigSchema = z.object({
+  repo: z.string(), // "rust-lang/async-book"
+  branch: z.string(), // "master"
+  srcPath: z.string().optional(), // default "src"
+  partsAllow: z.array(z.string()).optional(), // only these part headers
+  resolveIncludes: z.boolean().optional(), // default true
+});
+export type MdBookConfig = z.infer<typeof MdBookConfigSchema>;
 
 // The injected seam: repo-root-relative path in, file contents out.
 // Production hits the network; tests pass a fixture-backed fetcher.
