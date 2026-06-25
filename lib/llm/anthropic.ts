@@ -10,7 +10,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const TOOL_NAME = "emit";
 const MAX_TRIES = 3;
-const DEFAULT_MAX_TOKENS = 8192;
+const DEFAULT_MAX_TOKENS = 16384;
 
 export const anthropic: LLMProvider = {
   name: "anthropic",
@@ -23,14 +23,18 @@ export const anthropic: LLMProvider = {
     model: string;
     maxTokens?: number;
   }): Promise<T> {
-    // One attempt: call, force the tool, return raw tool input. validateWithRetry
-    // owns the loop; this closure owns the provider call.
+    // One attempt: call, force tool, return raw input. validateWithRetry owns the
+    // loop. lastRaw carries the prior attempt across retries so the model repairs it.
+    let lastRaw: unknown;
     const callOnce = async (correction?: string): Promise<unknown> => {
-      // On retry, validateWithRetry passes the zod error as `correction`; append
-      // it as a user turn so the model fixes what failed, not blindly repeats.
+      // On retry, show the model its prior output + the zod error so it repairs
+      // that JSON, not regenerates blind.
       const messages = [...args.messages];
-      if (correction) {
-        messages.push({ role: "user", content: correction });
+      if (correction !== undefined) {
+        messages.push({
+          role: "user",
+          content: `Your previous output was:\n${JSON.stringify(lastRaw)}\n\nIt failed validation:\n${correction}\n\nReturn corrected output.`,
+        });
       }
 
       const res = await client.messages.create({
@@ -56,10 +60,19 @@ export const anthropic: LLMProvider = {
         tool_choice: { type: "tool", name: TOOL_NAME },
       });
 
+      // Truncated = partial JSON; retrying just truncates again. Throw
+      // (non-retryable) so the caller raises the cap.
+      if (res.stop_reason === "max_tokens") {
+        throw new Error(
+          `Anthropic response truncated at max_tokens (${args.maxTokens ?? DEFAULT_MAX_TOKENS}); raise maxTokens.`,
+        );
+      }
+
       const toolUse = res.content.find((b) => b.type === "tool_use");
       if (!toolUse) {
-        throw new Error("No tool_use in response");
+        throw new Error("No tool_use block in Anthropic response");
       }
+      lastRaw = toolUse.input;
       return toolUse.input;
     };
 

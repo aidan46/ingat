@@ -13,16 +13,36 @@ import { extractChapter } from "@/lib/agents/extractor";
 // Body never stored (principle 4); rubric never returned (principle 6) - counts
 // only. Idempotent: re-run replaces this chapter's concepts, never duplicates.
 export async function POST(req: Request) {
-  const body = z
+  // Validate at the trust boundary: malformed body is a 400, not an uncaught 500.
+  // req.json() throws on non-JSON.
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    return new Response("Body must be JSON", { status: 400 });
+  }
+  const parsed = z
     .object({ chapterId: z.string(), force: z.boolean().optional() })
-    .parse(await req.json());
-  const { chapterId, force } = body;
+    .safeParse(raw);
+  if (!parsed.success) {
+    return new Response("Expected { chapterId: string, force?: boolean }", {
+      status: 400,
+    });
+  }
+  const { chapterId, force } = parsed.data;
 
   const chapter = await prisma.chapter.findUnique({
-    where: { id: body.chapterId },
+    where: { id: chapterId },
     include: { book: true },
   });
   if (!chapter) return new Response("Chapter not found", { status: 404 });
+  // M3 is mdBook only; a non-MDBOOK book would 500 in the config parse below.
+  // Fail loud as 400. (Dispatch by sourceType when a second source lands.)
+  if (chapter.book.sourceType !== "MDBOOK") {
+    return new Response(`Unsupported sourceType: ${chapter.book.sourceType}`, {
+      status: 400,
+    });
+  }
 
   // Extraction = expensive billed call, rubric cached forever. Skip if already
   // EXTRACTED; `force` re-extracts on purpose (source changed / prove idempotent).

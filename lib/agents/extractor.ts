@@ -3,9 +3,10 @@ import { z } from "zod";
 import { anthropic } from "../llm/anthropic";
 import { agentConfig, type Msg } from "../llm";
 
-// Output schema = structural enforcement of the AGENTS.md contract. Bad
-// extraction fails here (-> retry in validateWithRetry), never reaches a Prisma
-// constraint violation.
+// Schema validates the AGENTS.md contract. NB: zod refinements (the distinct-tier
+// check) do NOT survive z.toJSONSchema into the tool input_schema - the model
+// isn't bound by them; validateWithRetry enforces them post-call and retries on a
+// miss. Bad extraction never hits a Prisma violation.
 
 const probeSchema = z.object({
   tier: z.enum(["RECALL", "EXPLAIN", "APPLY", "BUILD"]),
@@ -17,8 +18,9 @@ const conceptSchema = z.object({
   label: z.string().min(1),
   detail: z.string().min(1),
   weight: z.int().min(1).max(3),
-  // Exactly 4 probes, one per distinct tier: .length(4) caps count, refine forces
-  // all 4 tiers. Protects @@unique([conceptId, tier]) - bad shape retries.
+  // Exactly 4 probes, distinct tiers. .length(4) reaches the tool schema; the
+  // refine does NOT (enforced post-call). Together guard @@unique([conceptId,
+  // tier]); a miss retries.
   probes: z
     .array(probeSchema)
     .refine((probes) => new Set(probes.map((p) => p.tier)).size === 4, {
@@ -27,8 +29,10 @@ const conceptSchema = z.object({
     .length(4),
 });
 
-const extractorSchema = z.object({
-  concepts: z.array(conceptSchema),
+export const extractorSchema = z.object({
+  // .min(1) so {concepts:[]} retries, not seals an empty rubric EXTRACTED (guard
+  // then blocks re-extract). Upper bound soft (prompt 6-10): 5/11 can be valid.
+  concepts: z.array(conceptSchema).min(1),
 });
 
 // z.infer pulls the static type from the schema: one source, no drift.
@@ -42,7 +46,7 @@ Extract the 6 to 10 most important concepts a reader must retain. For each conce
 - label: a short name for the concept.
 - detail: one sentence on what understanding it requires.
 - weight: an integer 1 to 3, where 3 is load-bearing.
-- probes: exactly four, one per tier:
+- probes: exactly four, one for each tier (use all four tiers, never repeat a tier):
   - RECALL: what it is and why it exists.
   - EXPLAIN: a contrast or boundary, when it breaks or how it differs from a sibling concept.
   - APPLY: trace or use it on a new, concrete example not drawn from the chapter.
