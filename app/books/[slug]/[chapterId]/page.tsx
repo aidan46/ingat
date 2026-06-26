@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+
 import { prisma } from "@/lib/db";
 import { loadChapterBody } from "@/lib/ingestion/load-chapter-body";
+
 import { ReaderClient } from "./reader-client";
 
 // Reader (server component): load chapter body transiently, render it. Touches

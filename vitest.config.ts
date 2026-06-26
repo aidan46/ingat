@@ -1,6 +1,7 @@
-import { defineConfig } from "vitest/config";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { defineConfig } from "vitest/config";
 
 // Mirror tsconfig "@/*" -> "./*" so vitest's runtime resolver matches tsc.
 const root = dirname(fileURLToPath(import.meta.url));

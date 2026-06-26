@@ -1,7 +1,8 @@
+import { z } from "zod";
+
+import { extractChapter } from "@/lib/agents/extractor";
 import { prisma } from "@/lib/db";
 import { loadChapterBody } from "@/lib/ingestion/load-chapter-body";
-import { z } from "zod";
-import { extractChapter } from "@/lib/agents/extractor";
 
 // POST /api/extract - body: { chapterId, force? }
 // Load body (transient), extract, persist Concepts + Probes, flip to EXTRACTED.

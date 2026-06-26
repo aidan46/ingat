@@ -1,7 +1,9 @@
 import "server-only";
+
 import { z } from "zod";
-import { anthropic } from "../llm/anthropic";
+
 import { agentConfig, type Msg } from "../llm";
+import { anthropic } from "../llm/anthropic";
 
 // Output = AGENTS.md sec 2 contract MINUS score: route computes score
 // deterministically (no LLM arithmetic). Partition refine (below)

@@ -1,5 +1,7 @@
 import "server-only";
+
 import { PrismaPg } from "@prisma/adapter-pg";
+
 import { PrismaClient } from "@/app/generated/prisma/client";
 
 // v7's new client connects via a driver adapter (or Accelerate), not a datasource
