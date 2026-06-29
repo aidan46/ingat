@@ -1,5 +1,5 @@
 import "server-only";
-import { ZodType } from "zod";
+import { type ZodType } from "zod";
 
 export type Msg = {
   role: "user" | "assistant";
@@ -21,4 +21,5 @@ export interface LLMProvider {
 
 export const agentConfig = {
   extractor: { model: "claude-sonnet-4-6" },
+  grader: { model: "claude-sonnet-4-6" },
 };

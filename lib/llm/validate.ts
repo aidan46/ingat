@@ -1,5 +1,5 @@
 import "server-only";
-import { ZodType } from "zod";
+import { type ZodType } from "zod";
 
 // Call, validate against schema, re-prompt with the zod error on failure, up to
 // maxTries, then throw. Provider-agnostic: callOnce is the only provider-specific
