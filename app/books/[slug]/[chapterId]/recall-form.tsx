@@ -56,8 +56,9 @@ export function RecallForm({ chapterId }: { chapterId: string }) {
       <button
         onClick={() => void onSubmit()}
         disabled={loading || !summary.trim()}
+        className="mx-auto my-8 block rounded border-2 border-cobalt px-6 py-3 font-medium text-cobalt hover:bg-cobalt hover:text-paper disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Submit recall
+        {loading ? "Grading..." : "Submit recall"}
       </button>
       {error && <p>{error}</p>}
       {result && (
