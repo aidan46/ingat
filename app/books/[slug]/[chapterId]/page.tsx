@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { loadChapterBody } from "@/lib/ingestion/load-chapter-body";
-import Markdown from "react-markdown";
-import { RecallForm } from "./recall-form";
+import { ReaderClient } from "./reader-client";
 
 // Reader (server component): load chapter body transiently, render it. Touches
 // Book + Chapter only, NEVER Concept - rubric stays sealed until recall submit.
@@ -31,12 +30,6 @@ export default async function ChapterReader({
   // Transient body via the source-dispatched helper; never persisted.
   const chapterMarkdown = await loadChapterBody(chapter);
 
-  return (
-    <>
-      <article className="prose prose-neutral mx-auto p-8">
-        <Markdown>{chapterMarkdown}</Markdown>
-      </article>
-      <RecallForm chapterId={chapterId} />
-    </>
-  );
+  // Client state machine owns the reading -> recalling transition.
+  return <ReaderClient chapterId={chapterId} markdown={chapterMarkdown} />;
 }
