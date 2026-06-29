@@ -14,9 +14,11 @@ type Phase = "reading" | "recalling";
 export function ReaderClient({
   chapterId,
   markdown,
+  extracted,
 }: {
   chapterId: string;
   markdown: string;
+  extracted: boolean;
 }) {
   const [phase, setPhase] = useState<Phase>("reading");
 
@@ -26,18 +28,25 @@ export function ReaderClient({
         <article className="prose prose-neutral mx-auto p-8">
           <Markdown>{markdown}</Markdown>
         </article>
-        {/* confirm guards a stray click: once recalling, the text is hidden. */}
-        <button
-          onClick={() => {
-            if (
-              window.confirm("Start recall? The chapter text will be hidden.")
-            )
-              setPhase("recalling");
-          }}
-          className="mx-auto my-8 block rounded border-2 border-cobalt px-6 py-3 font-medium text-cobalt hover:bg-cobalt hover:text-paper"
-        >
-          Start recall
-        </button>
+        {/* Recall needs a rubric: no Start button until the chapter is EXTRACTED. */}
+        {extracted ? (
+          // confirm guards a stray click: once recalling, the text is hidden.
+          <button
+            onClick={() => {
+              if (
+                window.confirm("Start recall? The chapter text will be hidden.")
+              )
+                setPhase("recalling");
+            }}
+            className="mx-auto my-8 block rounded border-2 border-cobalt px-6 py-3 font-medium text-cobalt hover:bg-cobalt hover:text-paper"
+          >
+            Start recall
+          </button>
+        ) : (
+          <p className="mx-auto my-8 max-w-prose text-center text-clay">
+            Extract this chapter before you can recall it.
+          </p>
+        )}
       </>
     );
   }

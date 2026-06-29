@@ -30,6 +30,13 @@ export default async function ChapterReader({
   // Transient body via the source-dispatched helper; never persisted.
   const chapterMarkdown = await loadChapterBody(chapter);
 
-  // Client state machine owns the reading -> recalling transition.
-  return <ReaderClient chapterId={chapterId} markdown={chapterMarkdown} />;
+  // Client state machine owns the reading -> recalling transition. Reading works
+  // for any chapter; recall is gated on EXTRACTED (no rubric = nothing to grade).
+  return (
+    <ReaderClient
+      chapterId={chapterId}
+      markdown={chapterMarkdown}
+      extracted={chapter.status === "EXTRACTED"}
+    />
+  );
 }

@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const recallBody = z.object({
   chapterId: z.string(),
-  summary: z.string().min(1),
+  summary: z.string().trim().min(1), // trim first: reject whitespace-only at the boundary
 });
 
 // POST /api/recall - body: zod { chapterId: string, summary: string }
