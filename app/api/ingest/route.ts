@@ -14,7 +14,7 @@ import { slugify } from "@/lib/ingestion/slug";
 export async function POST(req: Request) {
   const config = MdBookConfigSchema.parse(await req.json());
 
-  // Manifest only, never call loadChapter here; ingest stores no bodies (principle 4).
+  // Manifest only, never call loadChapter here; ingest stores no bodies.
   const adapter = new MdBookAdapter(
     config,
     rawGithubFetcher(config.repo, config.branch),

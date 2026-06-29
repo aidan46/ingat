@@ -6,7 +6,7 @@ import { loadChapterBody } from "@/lib/ingestion/load-chapter-body";
 
 // POST /api/extract - body: { chapterId, force? }
 // Load body (transient), extract, persist Concepts + Probes, flip to EXTRACTED.
-// Body never stored (principle 4); rubric never returned (principle 6) - counts
+// Body never stored; rubric never returned - counts
 // only. Idempotent: re-run replaces this chapter's concepts, never duplicates.
 export async function POST(req: Request) {
   // Validate at the trust boundary: malformed body is a 400, not an uncaught 500.
