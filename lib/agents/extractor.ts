@@ -57,7 +57,7 @@ Extract the 6 to 10 most important concepts a reader must retain. For each conce
 
 Base everything strictly on the chapter. Invent nothing.`;
 
-// Sees chapter text, GENERATES the key. Never sees a user answer (principle 3).
+// Sees chapter text, GENERATES the key. Never sees a user answer.
 export function extractChapter(input: {
   chapterTitle: string;
   chapterMarkdown: string;
