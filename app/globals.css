@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* v4 registers plugins in CSS, not a config file. Enables `prose`. */
+@plugin "@tailwindcss/typography";
 
 @theme {
   /* Brand */
