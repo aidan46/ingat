@@ -21,6 +21,11 @@ const eslintConfig = defineConfig([
     },
     plugins: { "unused-imports": unusedImports },
     rules: {
+      // Type-only imports must say `type` (inline): catches value-importing a type.
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { fixStyle: "inline-type-imports" },
+      ],
       // unused-imports owns unused detection so it can auto-fix dropped imports.
       "@typescript-eslint/no-unused-vars": "off",
       "unused-imports/no-unused-imports": "error",

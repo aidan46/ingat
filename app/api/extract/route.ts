@@ -5,7 +5,7 @@ import {
   rawGithubFetcher,
 } from "@/lib/ingestion/mdbook-adapter";
 import { z } from "zod";
-import { ChapterRef } from "@/lib/ingestion/source-adapter";
+import { type ChapterRef } from "@/lib/ingestion/source-adapter";
 import { extractChapter } from "@/lib/agents/extractor";
 
 // POST /api/extract - body: { chapterId, force? }
