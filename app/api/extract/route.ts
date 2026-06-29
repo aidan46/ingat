@@ -1,11 +1,6 @@
 import { prisma } from "@/lib/db";
-import {
-  MdBookAdapter,
-  MdBookConfigSchema,
-  rawGithubFetcher,
-} from "@/lib/ingestion/mdbook-adapter";
+import { loadChapterBody } from "@/lib/ingestion/load-chapter-body";
 import { z } from "zod";
-import { type ChapterRef } from "@/lib/ingestion/source-adapter";
 import { extractChapter } from "@/lib/agents/extractor";
 
 // POST /api/extract - body: { chapterId, force? }
@@ -36,8 +31,8 @@ export async function POST(req: Request) {
     include: { book: true },
   });
   if (!chapter) return new Response("Chapter not found", { status: 404 });
-  // M3 is mdBook only; a non-MDBOOK book would 500 in the config parse below.
-  // Fail loud as 400. (Dispatch by sourceType when a second source lands.)
+  // mdBook only for now; loadChapterBody throws on other sources. Guard here
+  // for a clean 400 (loadChapterBody dispatches sourceType when a source lands).
   if (chapter.book.sourceType !== "MDBOOK") {
     return new Response(`Unsupported sourceType: ${chapter.book.sourceType}`, {
       status: 400,
@@ -50,19 +45,7 @@ export async function POST(req: Request) {
     return Response.json({ chapterId, skipped: true });
   }
 
-  const config = MdBookConfigSchema.parse(chapter.book.sourceConfig);
-  const adapter = new MdBookAdapter(
-    config,
-    rawGithubFetcher(config.repo, config.branch),
-  );
-
-  const chapterRef: ChapterRef = {
-    title: chapter.title,
-    order: chapter.order,
-    part: chapter.part ?? undefined,
-    sourcePath: chapter.sourcePath,
-  };
-  const chapterMarkdown = await adapter.loadChapter(chapterRef);
+  const chapterMarkdown = await loadChapterBody(chapter);
 
   const result = await extractChapter({
     chapterTitle: chapter.title,
