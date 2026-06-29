@@ -3,6 +3,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import tseslint from "typescript-eslint";
 import unusedImports from "eslint-plugin-unused-imports";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 import prettier from "eslint-config-prettier";
 
 const eslintConfig = defineConfig([
@@ -19,13 +20,20 @@ const eslintConfig = defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    plugins: { "unused-imports": unusedImports },
+    plugins: {
+      "unused-imports": unusedImports,
+      "simple-import-sort": simpleImportSort,
+    },
     rules: {
       // Type-only imports must say `type` (inline): catches value-importing a type.
       "@typescript-eslint/consistent-type-imports": [
         "error",
         { fixStyle: "inline-type-imports" },
       ],
+      // Grouped, alphabetized import order (defaults keep side-effect imports
+      // like `import "server-only"` pinned, not reordered across others).
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
       // unused-imports owns unused detection so it can auto-fix dropped imports.
       "@typescript-eslint/no-unused-vars": "off",
       "unused-imports/no-unused-imports": "error",

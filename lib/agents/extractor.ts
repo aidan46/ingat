@@ -1,7 +1,9 @@
 import "server-only";
+
 import { z } from "zod";
-import { anthropic } from "../llm/anthropic";
+
 import { agentConfig, type Msg } from "../llm";
+import { anthropic } from "../llm/anthropic";
 
 // Schema validates the AGENTS.md contract. NB: zod refinements (the distinct-tier
 // check) do NOT survive z.toJSONSchema into the tool input_schema - the model

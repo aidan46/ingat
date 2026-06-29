@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import {
-  MdBookAdapter,
   type Fetcher,
+  MdBookAdapter,
   type MdBookConfig,
 } from "./mdbook-adapter";
 

@@ -1,5 +1,7 @@
 import path from "node:path";
+
 import { z } from "zod";
+
 import type { ChapterRef, SourceAdapter } from "./source-adapter";
 
 // Schema validates incoming/stored config; type derives from it (one source).

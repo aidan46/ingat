@@ -1,6 +1,7 @@
+import { createEmptyCard, State } from "ts-fsrs";
+
 import { type Concept } from "@/app/generated/prisma/client";
 import { FsrsState } from "@/app/generated/prisma/enums";
-import { createEmptyCard, State } from "ts-fsrs";
 
 // Deterministic domain: pure ts-fsrs/arithmetic, no model. M4 =
 // card-init only; review-interval math (fsrs.repeat) is M5.

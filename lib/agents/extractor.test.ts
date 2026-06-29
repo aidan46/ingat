@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // extractor.ts imports "server-only" (throws outside a server bundle) + the
 // Anthropic adapter (builds a client at load). Stub both to test the schema alone.

@@ -1,7 +1,8 @@
 import { type SourceType } from "@/app/generated/prisma/enums";
+
 import {
-  MdBookConfigSchema,
   MdBookAdapter,
+  MdBookConfigSchema,
   rawGithubFetcher,
 } from "./mdbook-adapter";
 import { type ChapterRef } from "./source-adapter";
