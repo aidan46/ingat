@@ -4,11 +4,11 @@ Read once, remember on schedule. A single-user, local spaced-repetition reader: 
 ingests book chapters, extracts concepts into a rubric, grades your recall, and schedules
 reviews with FSRS so what you read sticks.
 
-> Status: **M4 reader + same-day recall** — read a chapter in-app, write a from-memory
-> recall, and `POST /api/recall` grades it through the `lib/llm` port: the Recall Grader
-> judges captured/partial/missed while the route computes the score deterministically. The
-> first grade initializes each concept's FSRS card, so it becomes schedulable (`due` set).
-> The due-today review queue + interval scheduling are next (M5). See `docs/BUILD-PLAN.md`.
+> Status: **reader + same-day recall + the delayed review loop** — read a chapter, recall
+> it (Recall Grader initializes each concept's FSRS card), then review due concepts on their
+> scheduled dates: a due-today queue presents the concept's probe, the Review Tester grades
+> your answer, and a deterministic FSRS update reschedules it. Tier escalation + a tracker
+> dashboard are next. See `docs/BUILD-PLAN.md`.
 
 ## Architecture in one breath
 
@@ -89,6 +89,29 @@ This makes a billed LLM call, same funded Console `ANTHROPIC_API_KEY` as extract
 The loop is **sealed**: the rubric (concepts, probes, expected answers) never crosses the
 wire before a recall is submitted. The reader sends only chapter text; the grade response
 carries labels + score + corrections + questions, never the probes or expected answers.
+
+## Review due concepts
+
+Once a concept has been recalled its FSRS card is schedulable, so it surfaces in the
+delayed review loop:
+
+1. Visit `/review`. `GET /api/review/due` returns concepts whose `due` has passed, most
+   overdue first, spanning every book (the queue is derived from `due <= now`, no extra
+   column). Each card carries its label + the probe **question** at the concept's current
+   tier.
+2. Answer the question from memory and submit. `POST /api/review/grade` loads the probe's
+   expected answer server-side, runs the Review Tester (`lib/llm` port) to grade the answer
+   into a `rating` (1-4), then the deterministic scheduler (`ts-fsrs`) reschedules the card.
+   A `ReviewLog` row + the updated card are written in one transaction.
+3. The result renders: correct / rating / feedback, plus the expected answer — revealed
+   **only now**, after submit.
+
+This makes a billed LLM call (the Tester), same funded Console `ANTHROPIC_API_KEY`.
+
+Sealed here too: the due queue ships the probe question (presentable) but **never** the
+expected answer. The expected answer is server-side until the answer is submitted, then it
+rides back in the grade response. The tester never sees the chapter, only the probe + your
+answer; the scheduler does the FSRS math, never a model.
 
 ## Design tokens
 
