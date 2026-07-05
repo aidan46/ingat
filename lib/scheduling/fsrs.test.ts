@@ -90,4 +90,29 @@ describe("reviewCard", () => {
     expect(result.due!.getTime()).toBeGreaterThan(now.getTime() + daysToMs(1));
     expect(result.fsrsState).toBe(FsrsState.REVIEW);
   });
+
+  // Regression: a fresh card graded Good must GRADUATE and keep growing across a
+  // persist->reconstruct round-trip. Guards the learning_steps-drop trap (card
+  // stuck LEARNING/scheduledDays=0 forever). Round-trip is the point: the bug
+  // lived in reconstruction, so a single reviewCard call wouldn't catch it.
+  it("fresh card graduates to REVIEW and interval climbs across a round-trip", () => {
+    const concept = makeConcept(now);
+
+    // First review at now.
+    const r1 = reviewCard({ ...concept, due: now }, Rating.Good, now);
+
+    // Round-trip: r1 is the persisted columns. Rebuild a ReviewableConcept from
+    // them (due narrowed non-null) and review again at its due date.
+    const dueAt = r1.due!;
+    const r2 = reviewCard(
+      { ...concept, ...r1, due: dueAt },
+      Rating.Good,
+      dueAt,
+    );
+
+    expect(r1.fsrsState).toBe(FsrsState.REVIEW);
+    expect(r1.scheduledDays).toBeGreaterThanOrEqual(1);
+    expect(r2.fsrsState).toBe(FsrsState.REVIEW);
+    expect(r2.scheduledDays).toBeGreaterThan(r1.scheduledDays);
+  });
 });

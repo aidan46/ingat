@@ -102,7 +102,11 @@ export function reviewCard(
     due: concept.due,
   };
 
-  const card = fsrs().next(reconstructedCard, now, grade).card;
+  const card = fsrs({ enable_short_term: false }).next(
+    reconstructedCard,
+    now,
+    grade,
+  ).card;
 
   return cardToColumns(card);
 }
