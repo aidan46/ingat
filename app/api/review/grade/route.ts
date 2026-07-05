@@ -20,8 +20,7 @@ export async function POST(req: Request) {
     return new Response("Body must be JSON", { status: 400 });
   }
   const parsed = gradeBody.safeParse(raw);
-  if (!parsed.success)
-    return Response.json({ error: "invalid body" }, { status: 400 });
+  if (!parsed.success) return new Response("Invalid body", { status: 400 });
   const { conceptId, answer } = parsed.data;
 
   const concept = await prisma.concept.findUnique({

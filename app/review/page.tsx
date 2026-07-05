@@ -122,7 +122,7 @@ export default function ReviewPage() {
           {/* void: onClick wants void, not the Promise. */}
           <button
             onClick={() => void onSubmit()}
-            disabled={loading || !answer.trim()}
+            disabled={loading || !answer.trim() || !current.question}
             className="mx-auto my-8 block rounded border-2 border-cobalt px-6 py-3 font-medium text-cobalt hover:bg-cobalt hover:text-paper disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Grading..." : "Submit answer"}
