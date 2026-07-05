@@ -23,4 +23,5 @@ export interface LLMProvider {
 export const agentConfig = {
   extractor: { model: "claude-sonnet-4-6" },
   grader: { model: "claude-sonnet-4-6" },
+  tester: { model: "claude-sonnet-4-6" },
 };
