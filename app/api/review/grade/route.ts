@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { gradeAnswer } from "@/lib/agents/tester";
 import { prisma } from "@/lib/db";
+import { nextTier, shouldPromote } from "@/lib/scheduling/escalation";
 import { reviewCard } from "@/lib/scheduling/fsrs";
 
 const gradeBody = z.object({
@@ -63,6 +64,21 @@ export async function POST(req: Request) {
   const now = new Date();
   const updated = reviewCard({ ...concept, due }, rating, now);
 
+  // PRIOR at-tier ratings only: this answer's ReviewLog is written below, in the
+  // txn, so it is NOT in this result yet.
+  const atTierRatings = (
+    await prisma.reviewLog.findMany({
+      where: { conceptId, tier: concept.currentTier },
+      select: { rating: true },
+    })
+  ).map((r) => r.rating);
+  // append current rating: promotion counts it too, else tips 1 review late.
+  const promoted = shouldPromote(concept.currentTier, [
+    ...atTierRatings,
+    rating,
+  ])
+    ? nextTier(concept.currentTier)
+    : null;
   const reviewLog = prisma.reviewLog.create({
     data: {
       conceptId,
@@ -75,7 +91,7 @@ export async function POST(req: Request) {
   });
   const conceptUpdate = prisma.concept.update({
     where: { id: conceptId },
-    data: updated,
+    data: promoted ? { ...updated, currentTier: promoted } : updated,
   });
   // Atomic: never log a review without advancing the card, or vice versa.
   await prisma.$transaction([reviewLog, conceptUpdate]);
@@ -87,5 +103,6 @@ export async function POST(req: Request) {
     rating,
     feedback,
     expectedAnswer: probe.expectedAnswer,
+    promoted: promoted ? { from: concept.currentTier, to: promoted } : null,
   });
 }
