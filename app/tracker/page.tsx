@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/db";
 
+// Live DB read: render on demand, never prerender at build (no DB -> ECONNREFUSED).
+export const dynamic = "force-dynamic";
+
 // Tracker (server component): progress derived from existing rows, NO new storage.
 // Sealed: aggregates only. NEVER select Probe (question/expectedAnswer); do not
 // render concept label/detail (rubric content). Counts/tiers/booleans are progress
