@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { gradeAnswer } from "@/lib/agents/tester";
 import { prisma } from "@/lib/db";
-import { nextTier, shouldPromote } from "@/lib/scheduling/escalation";
+import { promotionTarget } from "@/lib/scheduling/escalation";
 import { reviewCard } from "@/lib/scheduling/fsrs";
 
 const gradeBody = z.object({
@@ -64,37 +64,44 @@ export async function POST(req: Request) {
   const now = new Date();
   const updated = reviewCard({ ...concept, due }, rating, now);
 
-  // PRIOR at-tier ratings only: this answer's ReviewLog is written below, in the
-  // txn, so it is NOT in this result yet.
-  const atTierRatings = (
-    await prisma.reviewLog.findMany({
-      where: { conceptId, tier: concept.currentTier },
-      select: { rating: true },
-    })
-  ).map((r) => r.rating);
-  // append current rating: promotion counts it too, else tips 1 review late.
-  const promoted = shouldPromote(concept.currentTier, [
-    ...atTierRatings,
-    rating,
-  ])
-    ? nextTier(concept.currentTier)
-    : null;
-  const reviewLog = prisma.reviewLog.create({
-    data: {
-      conceptId,
-      tier: concept.currentTier,
-      answer,
+  // Interactive txn: read+write 1 unit. Narrows read-then-write window (Read Committed;
+  // full close = serializable/row-lock, skip single-user). gradeAnswer stays OUT: no txn on net call.
+  const promoted = await prisma.$transaction(async (tx) => {
+    // PRIOR at-tier ratings only (this answer's row is created below, same txn).
+    const atTierRatings = (
+      await tx.reviewLog.findMany({
+        where: { conceptId, tier: concept.currentTier },
+        select: { rating: true },
+      })
+    ).map((r) => r.rating);
+
+    // off-by-one folded into promotionTarget: prior rows + this rating.
+    const promoted = promotionTarget(
+      concept.currentTier,
+      atTierRatings,
       rating,
-      correct,
-      feedback,
-    },
+    );
+
+    await tx.reviewLog.create({
+      data: {
+        conceptId,
+        tier: concept.currentTier,
+        answer,
+        rating,
+        correct,
+        feedback,
+      },
+    });
+
+    // Promotion keeps the FSRS schedule: card tracks concept memory; tier is probe
+    // difficulty, orthogonal. Harder probe inherits earned interval, no relearn.
+    await tx.concept.update({
+      where: { id: conceptId },
+      data: promoted ? { ...updated, currentTier: promoted } : updated,
+    });
+
+    return promoted;
   });
-  const conceptUpdate = prisma.concept.update({
-    where: { id: conceptId },
-    data: promoted ? { ...updated, currentTier: promoted } : updated,
-  });
-  // Atomic: never log a review without advancing the card, or vice versa.
-  await prisma.$transaction([reviewLog, conceptUpdate]);
 
   // Sealed reveal: expectedAnswer crosses the wire only post-submit (here),
   // never in the due queue.
